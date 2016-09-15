@@ -11,8 +11,8 @@ val newVar_var : bool -> bool -> var
 val newVar : unit -> var
 val addClause : Lit.t Vec.t -> bool
 val simplify : unit -> bool
-val solve_lit : Lit.t Vec.t -> bool
-val solve : unit -> bool
+val solve_lit : out_channel -> Lit.t Vec.t -> bool
+val solve : out_channel -> bool
 val okay : unit -> bool
 val setPolarity : var -> bool -> unit
 val setDecisionVar : var -> bool -> unit

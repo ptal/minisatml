@@ -1,6 +1,7 @@
 OCAMLOPT = ocamlopt
-
+OCAMLB = ocamlc
 INCLUDE = unix.cmxa
+INCLUDEB = unix.cma
 
 NAME=satML
 
@@ -22,6 +23,11 @@ ML = 	vec.ml \
 all:
 	$(OCAMLOPT) $(MLI)
 	$(OCAMLOPT) -o $(NAME) -g $(INCLUDE)  $(ML)
+
+debug:
+	$(OCAMLB) $(MLI)
+	$(OCAMLB) -o $(NAME) -g $(INCLUDEB)  $(ML)
+
 
 clean:
 	rm -f *.o *.byte *.cmo *.cmi *.cma *.cmt *.cmti *.cmx $(NAME)

@@ -7,6 +7,7 @@ module Vec : sig
 
   val init : int -> 'a -> 'a t
   val grow : 'a t -> int -> 'a -> unit
+  val growTo : 'a t -> int -> 'a -> unit
   val size : 'a t -> int
   val shrink : 'a t -> int -> unit
   val pop : 'a t -> unit
@@ -18,7 +19,7 @@ module Vec : sig
   val push : 'a t -> 'a -> 'a -> unit
 
   val selectionSort : 'a t -> unit
-  val sort : 'a t -> unit
+  val sort : ('a -> 'a -> int) -> 'a t -> unit
 
   val iter : ('a -> unit) -> 'a t -> unit
   val iteri : (int -> 'a -> unit) -> 'a t-> unit

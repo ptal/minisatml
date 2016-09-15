@@ -80,12 +80,19 @@ module Clause = struct
     done;
     !abstraction
 
+  exception Break
   let clause_new (ps:Lit.Array.t) ~learnt =
+    let size = ref 0 in
+    begin
+      try Lit.Array.iter (fun a -> if a >= 0 then incr size else raise Break) ps;
+      with Break -> ()
+    end;
+
     let extra =
       if learnt then Act 0.
       else Abst (calc_abstraction ps)
     in
-    { size = Lit.Array.size ps;
+    { size = !size;
       extra;
       data = ps;
       learnt;
@@ -130,7 +137,9 @@ module Clause = struct
   let data t = t.data
 
   let iter f t =
-    Lit.Array.iter f t.data
+    for i = 0 to t.size - 1 do
+      f t.data.(i)
+    done
 
   let fold f a t =
     Lit.Array.fold f a t.data

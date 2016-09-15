@@ -71,8 +71,8 @@ module Clause : sig
   val set_activity : t -> float -> unit
   val abstraction : t -> int
 
-  val shrink : t -> int -> unit
-  val pop : t -> unit
+  (* val shrink : t -> int -> unit *)
+  (* val pop : t -> unit *)
   val learnt : t -> bool
 
   (* Ça a l'air inutile... *)

@@ -22,7 +22,7 @@ type env = {
   watches : Clause.t Vec.t Vec.t;
   assigns : Lbool.t Vec.t;
   polarity : polarity Vec.t;
-  decision_var : Lbool.t Vec.t;
+  decision_var : bool Vec.t;
   trail : Lit.t Vec.t;
   trail_lim : int Vec.t;
   reason : Clause.t Vec.t;
@@ -68,7 +68,7 @@ type env = {
 }
 
 
-let dummy_lit = Lit.lit 0 false
+let dummy_lit = Lit.lit (-1) false
 let dummy_lbool = Lbool.LUndef
 let dummy_clause = {
   Clause.size = 0;
@@ -76,7 +76,7 @@ let dummy_clause = {
   Clause.learnt = false;
   Clause.data = Array.make 0 dummy_lit;}
 let dummy_polarity = PTrue
-let dummy_var = 0
+let dummy_var = -1
 
 let debug = ref false
 
@@ -89,7 +89,7 @@ let env = {
   watches = Vec.init 0 (Vec.init 0 dummy_clause);
   assigns = Vec.init 0 dummy_lbool;
   polarity = Vec.init 0 dummy_polarity;
-  decision_var = Vec.init 0 dummy_lbool;
+  decision_var = Vec.init 0 false;
   trail = Vec.init 0 dummy_lit;
   trail_lim = Vec.init 0 0;
   reason = Vec.init 0 dummy_clause;
@@ -101,7 +101,7 @@ let env = {
   add_tmp = Vec.init 0 dummy_lit;
 
   assumptions = Vec.init 0 dummy_lit;
-  order_heap = Heap.init dummy_var;
+  order_heap = Heap.init dummy_lit;
 
   var_decay = 1. /. 0.95;
   clause_decay = 1. /. 0.999;
@@ -138,8 +138,11 @@ let set_debug b =
   debug := b
 
 
+let heap_comp i j = (Vec.get env.activity i) > (Vec.get env.activity j)
+
+
 let value_of_int v = Vec.get env.assigns v
-let value l = if Lit.sign l then Vec.get env.assigns (Lit.var l) else Lbool.inv (Vec.get env.assigns (Lit.var l))
+let value l = if Lit.var l > Vec.size env.assigns then begin Printf.eprintf "plop %d" (Lit.var l); Lbool.LUndef end else if Lit.sign l then Vec.get env.assigns (Lit.var l) else Lbool.inv (Vec.get env.assigns (Lit.var l))
 
 
 let printLit l =
@@ -150,8 +153,11 @@ let printLit l =
 
 
 let printClause c =
-  Printf.eprintf "{ %s }%!\n"
-    (Clause.fold (fun acc l -> Printf.sprintf "%s ,%s" acc (printLit l)) "" c)
+  Printf.eprintf "{ %!";
+  for i = 0 to Clause.size c - 1 do
+    Printf.eprintf "%s ," (    printLit (Clause.get c i))
+  done;
+  Printf.eprintf " }%!"
 
 
 
@@ -168,22 +174,35 @@ let nLearnts () = Vec.size env.learnts
 let nVars () = Vec.size env.assigns
 
 let insertVarOrder x =
-  if not (Heap.inHeap env.order_heap x) && Lbool.bool_of_lbool (Vec.get env.decision_var x) then Heap.insert env.order_heap x
+  if not (Heap.inHeap env.order_heap x) && Vec.get env.decision_var x then Heap.insert heap_comp env.order_heap x
 
 let varDecayActivity () =
   env.var_inc <- env.var_inc *. env.var_decay
 
 let varBumpActivity v =
   Vec.set env.activity v ((Vec.get env.activity v) +. env.var_inc);
-  if (Vec.get env.activity v) > (1.**100.) then
-    for i = 0 to nVars () do ()
-    done
+  if (Vec.get env.activity v) > (1.**100.) then begin
+    (* Rescale *)
+    for i = 0 to nVars () - 1 do
+      Vec.set env.activity i ((Vec.get env.activity i) *. (1.**(-100.)));
+    done;
+    env.var_inc <- env.var_inc *. (1.**(-100.))
+  end;
 
-let claDecayActivity () = env.cla_inc <- env.cla_inc *. env.clause_decay
+  (* Update order_heap with respect to new activity: *)
+  if Heap.inHeap env.order_heap v then
+    (*     if (false) printf ("decrease %d with new weight %f\n", (v+1), activity[v]);*)
+    Heap.decrease heap_comp env.order_heap v
+
+
+let claDecayActivity () =
+  env.cla_inc <- env.cla_inc *. env.clause_decay
 let claBumpActivity c =
   Clause.set_activity c ((Clause.get_activity c) +. env.cla_inc);
   if Clause.get_activity c > 1.**20. then begin
-    Vec.iter (fun c -> Clause.set_activity c (Clause.get_activity c *. (1.**20.))) env.learnts;
+    for i = 0 to Vec.size env.learnts - 1 do
+      Clause.set_activity (Vec.get env.learnts i) (Clause.get_activity (Vec.get env.learnts i) *. (1.**(-20.)))
+    done;
     env.cla_inc <- env.cla_inc *. (1.**(-20.))
   end
 
@@ -192,17 +211,17 @@ let pickBranchLit p v =
   begin try
       while !next = dummy_var ||
             Vec.get env.assigns !next <> Lbool.LUndef ||
-            not (Lbool.bool_of_lbool (Vec.get env.decision_var !next)) do
+            not (Vec.get env.decision_var !next) do
         if Heap.empty env.order_heap then begin
           next := dummy_var;
           raise Break;
         end
         else
-          next := Heap.removeMin env.order_heap
+          next := Heap.removeMin heap_comp env.order_heap
       done;
     with Break -> () end;
   let l = if !next = dummy_var then dummy_lit else Lit.lit !next false in
-  if !debug && !next <> dummy_var then begin
+  if false && !debug && !next <> dummy_var then begin
     Printf.eprintf "picked %s from:\n%!" (printLit l);
     for i = 0 to Vec.size env.activity -1 do
       Printf.eprintf "%d -> %f\n%!" (i+1) (Vec.get env.activity i)
@@ -226,7 +245,7 @@ let cancelUntil level =
 
 let setPolarity v b = Vec.set env.polarity v (bool_to_polarity b)
 let setDecisionVar v b =
-  Vec.set env.decision_var v (Lbool.lbool_of_bool b);
+  Vec.set env.decision_var v b;
   if b then insertVarOrder v
 
 let okay () = env.ok
@@ -242,7 +261,7 @@ let newVar_var sign dvar =
   Vec.push env.activity 0. 0.;
   Vec.push env.seen false false;
   Vec.push env.polarity (bool_to_polarity sign) dummy_polarity;
-  Vec.push env.decision_var (Lbool.lbool_of_bool dvar) dummy_lbool;
+  Vec.push env.decision_var dvar dvar;
   insertVarOrder(v);
   v
 
@@ -291,7 +310,7 @@ exception FoundWatch
   |      * the propagation queue is empty, even if there was a conflict.
   |_____________________________________________________________________________*)
 let propagate () =
-  Printf.eprintf "Propagate\n%!";
+  (* Printf.eprintf "Propagate\n%!"; *)
   let confl = ref dummy_clause in
   let num_props = ref 0 in
 
@@ -308,10 +327,13 @@ let propagate () =
     let end_var = Vec.size ws in
 
     if !debug then begin
-      Printf.eprintf "I propagate the atome %s\n%s watches the following clause:\n%!" (printLit p) (printLit p);
+      Printf.eprintf "I propagate the atom %s\n%s watches the following clauses:\n%!" (printLit p) (printLit p);
       for i = 0 to Vec.size ws -1 do
-        Printf.eprintf "    >%!";
-        printClause (Vec.get ws i);
+        Printf.eprintf " >%s:{ %!" (if Clause.learnt (Vec.get ws i) then "L" else "C");
+        for j = 0 to Clause.size (Vec.get ws i) -1 do
+          Printf.eprintf "%s ; " (printLit (Clause.get (Vec.get ws i) j));
+        done;
+        Printf.eprintf "}\n%!";
       done
     end;
 
@@ -363,8 +385,8 @@ let propagate () =
             (* Copy the remaining watches *)
             while !i < end_var do
               Vec.set ws !j (Vec.get ws !i);
-              incr i;
               incr j;
+              incr i;
             done
           end
           else begin
@@ -376,7 +398,7 @@ let propagate () =
     let dead_part = !i - !j in
     Vec.shrink (Vec.get env.watches (Lit.toInt p)) dead_part;
     if !debug then begin
-      Printf.eprintf "shrink %d elements\n%s watches the following clause:\n%!" dead_part (printLit p);
+      Printf.eprintf "shrink  %d elements\n%s watches the following clauses:\n%!" dead_part (printLit p);
       Vec.iter (fun c ->
           Printf.eprintf " >%s:{ %!" (if Clause.learnt c then "L" else "C");
           Clause.iter (fun l ->
@@ -388,7 +410,7 @@ let propagate () =
   done;
   env.propagations <- env.propagations + !num_props;
   env.simpDB_props <- env.simpDB_props - !num_props;
-  Printf.eprintf "Propagate End\n%!";
+  (* Printf.eprintf "Propagate End\n%!"; *)
   !confl
 
 let attachClause c =
@@ -402,29 +424,29 @@ let attachClause c =
 
 
 exception Return of bool
-
 let addClause ps =
   assert (decisionLevel () = 0);
   if not env.ok then false
   else begin
-    Vec.sort ps;
-    let i = ref 0 in
+    (* Check if clause is satisfied and remove false/duplicate literals: *)
+    Vec.sort compare ps;
     let j = ref 0 in
+    let ii = ref 0 in
     let p = ref dummy_lit in
     try
-      while !i < (Vec.size ps) do
-        if value (Vec.get ps !i) = Lbool.LTrue || Lit.eq (Vec.get ps !i) (Lit.tild !p)
+      for i = 0 to Vec.size ps -1 do
+        if value (Vec.get ps i) = Lbool.LTrue || (Vec.get ps i) = (Lit.tild !p)
         then raise (Return true)
-        else if value (Vec.get ps !i) = Lbool.LFalse && Lit.neq (Vec.get ps !i) !p
+        else if value (Vec.get ps i) <> Lbool.LFalse && (Vec.get ps i) <> !p
         then begin
-          p := Vec.get ps !i;
+          p := Vec.get ps i;
           Vec.set ps !j !p;
           incr j;
         end;
-        incr i;
+        ii := i
       done;
-      Vec.shrink ps (!i - !j);
 
+      Vec.shrink ps (!ii - !j);
       match Vec.size ps with
       | 0 -> env.ok <- false;false
       | 1 ->
@@ -443,7 +465,7 @@ let addClause ps =
           for i = 0 to (Clause.size c) -1 do
             Printf.eprintf "%s ; %!" (printLit (Clause.get c i));
           done;
-          Printf.eprintf "\n%!";
+          Printf.eprintf "}\n%!";
         end;
         true
     with Return b -> b;
@@ -511,9 +533,24 @@ let checkLiteralCount () =
     assert (env.clauses_literals = !cnt);
   end
 
-
+(*________________________________________________________________________
+  |
+  |  analyze : (confl : Clause* ) (out_learnt : vec<Lit>&) (out_btlevel : int&)  ->  [void]
+  |
+  |  Description:
+  |    Analyze conflict and produce a reason clause.
+  |
+  |    Pre-conditions:
+  |      * 'out_learnt' is assumed to be cleared.
+  |      * Current decision level must be greater than root level.
+  |
+  |    Post-conditions:
+  |      * 'out_learnt[0]' is the asserting literal at level 'out_btlevel'.
+  |
+  |  Effect:
+  |    Will undo part of the trail, upto but not beyond the assumption of the current decision level.
+  |__________________________________________________________________________ *)
 let analyze confl out_learnt out_btlevel =
-  Printf.eprintf "Analyse\n%!";
   let pathC = ref 0 in
   let p = ref dummy_lit in
 
@@ -524,26 +561,24 @@ let analyze confl out_learnt out_btlevel =
   let index = ref ((Vec.size env.trail) - 1) in
   out_btlevel := 0;
 
-  while !pathC >= 0 do
+  let rec dowhile () =
     if !debug then begin
-      Printf.eprintf "\nI analyze the clause %s:{ " (if Clause.learnt !confl then "L" else "C");
+      Printf.eprintf "\nI analyze the clause %s:{ " (if Clause.learnt !confl then"L" else "C");
       for i = 0 to Clause.size !confl -1 do
-        Printf.eprintf "%s;" (printLit (Clause.get !confl i));
+        Printf.eprintf "%s ; " (printLit (Clause.get !confl i));
       done;
       Printf.eprintf "}\n%!";
     end;
 
     assert (!confl <> dummy_clause);
 
-    let c = !confl in
+    if Clause.learnt !confl then
+        claBumpActivity !confl;
 
-    if Clause.learnt c then
-      claBumpActivity c;
+    for j = (if !p = dummy_lit then 0 else 1) to Clause.size !confl -1 do
+      let q = Clause.get !confl j in
 
-    for j = (if !p = dummy_lit then 0 else 1) to Clause.size c -1 do
-      let q = Clause.get c j in
-
-      if Vec.get env.seen (Lit.var q) && Vec.get env.level (Lit.var q) > 0 then begin
+      if not (Vec.get env.seen (Lit.var q)) && Vec.get env.level (Lit.var q) > 0 then begin
         varBumpActivity (Lit.var q);
         Vec.set env.seen (Lit.var q) true;
         if Vec.get env.level (Lit.var q) >= decisionLevel () then
@@ -555,21 +590,24 @@ let analyze confl out_learnt out_btlevel =
         end
       end
     done;
-
-    while Vec.get env.seen (Lit.var (Vec.get env.trail !index)) do
+    (* Select next clause to look at: *)
+    while not (Vec.get env.seen (Lit.var (Vec.get env.trail !index))) do
       decr index
     done;
     p := Vec.get env.trail !index;
     confl := Vec.get env.reason (Lit.var !p);
     Vec.set env.seen (Lit.var !p) false;
     decr pathC;
-  done;
+
+    if !pathC > 0 then
+      dowhile ()
+  in
+  dowhile ();
   Vec.set out_learnt 0 (Lit.tild !p);
   Vec.copyTo out_learnt env.analyze_toclear dummy_lit;
-
   for j = 0 to Vec.size env.analyze_toclear -1 do
     Vec.set env.seen (Lit.var (Vec.get env.analyze_toclear j)) false
-  done ; Printf.eprintf "End Analyse\n%!"
+  done
 
 (* Check if 'p' can be removed. 'abstract_levels' is used to abort early if the algorithm is visiting literals at levels that cannot be removed later. *)
 let litRedundant p abstract_levels =
@@ -582,9 +620,9 @@ let litRedundant p abstract_levels =
       let c = Vec.get env.reason (Lit.var (Vec.last env.analyze_stack)) in
       Vec.pop env.analyze_stack;
 
-      for i = 1 to Clause.size c do
+      for i = 1 to Clause.size c - 1 do
         let p = Clause.get c i in
-        if Vec.get env.seen (Lit.var p) && Vec.get env.level (Lit.var p) > 0 then begin
+        if not (Vec.get env.seen (Lit.var p)) && Vec.get env.level (Lit.var p) > 0 then begin
           if Vec.get env.reason (Lit.var p) <> dummy_clause && ((abstractLevel (Lit.var p)) land abstract_levels) <> 0 then begin
             Vec.set env.seen (Lit.var p) true;
             Vec.push env.analyze_stack p dummy_lit;
@@ -608,7 +646,7 @@ let removeSatisfied cs =
   for i = 0 to Vec.size cs - 1 do
     let c = Vec.get cs i in
     if !debug then begin
-      Printf.eprintf "Remove %d %s:{ " i (if Clause.learnt c then "L" else "C");
+      Printf.eprintf "Remove %s:{ " (if Clause.learnt c then "L" else "C");
       Clause.iter (fun l -> Printf.eprintf "%s ; " (printLit l)) c;
       Printf.eprintf "} ?\n%!";
     end;
@@ -642,7 +680,7 @@ let simplify () =
   (*   env.simpDB_props <- env.clauses_literals + env.learnts_literals; *)
   (*   true *)
   (* end *)
-  true
+  false
 
 let progressEstimate () =
   let progress = ref 0. in
@@ -669,7 +707,7 @@ let reduceDB () = (* assert false *) ()
 (*______________________________________________________________________________
   |
   |  analyzeFinal : (p : Lit)  ->  [void]
-  |  
+  |
   |  Description:
   |    Specialized analysis procedure to express the final conflict in terms of assumptions.
   |    Calculates the (possibly empty) set of assumptions that led to the assignment of 'p', and
@@ -692,10 +730,10 @@ let analyzeFinal p out_conflict =
           Vec.push out_conflict (Lit.tild (Vec.get env.trail i)) dummy_lit
         end else begin
           let c = Vec.get env.reason x in
-          Clause.iter (fun l ->
-              if Vec.get env.level (Lit.var l) > 0 then
-                Vec.set env.seen (Lit.var l) true
-            ) c
+          for j = 1 to Clause.size c -1 do
+            if Vec.get env.level (Lit.var (Clause.get c j)) > 0 then
+              Vec.set env.seen (Lit.var (Clause.get c j)) true
+          done;
         end;
         Vec.set env.seen x false
       end
@@ -731,13 +769,13 @@ let search oc nof_conflicts nof_learnts =
 
   try while true do
       let confl = ref (propagate ()) in
-      if not (!confl = dummy_clause) then begin
+      if !confl <> dummy_clause then begin
         (* Conflict *)
         env.conflicts <- env.conflicts + 1;
         incr conflictC;
 
         if !debug then
-          Printf.printf "I have a (%d-th) conflict at level %d\n%!" !conflictC (decisionLevel ());
+          Printf.eprintf "I have a (%d-th) conflict at level %d\n%!" !conflictC (decisionLevel ());
 
         if decisionLevel () = 0 then raise (Search Lbool.LFalse);
 
@@ -749,11 +787,11 @@ let search oc nof_conflicts nof_learnts =
         assert ((value (Vec.get learnt_clause 0)) = Lbool.LUndef);
 
         if !debug then begin
-          Printf.printf "Backjump to level %d and learn the clause { %!" !backtrack_level;
+          Printf.eprintf "Backjump to level %d and learn the clause { %!" !backtrack_level;
           for i = 0 to Vec.size learnt_clause - 1 do
-            Printf.printf "%s ;%!" (printLit (Vec.get learnt_clause i))
+            Printf.eprintf "%s ; %!" (printLit (Vec.get learnt_clause i))
           done;
-          Printf.printf "}\n%!"
+          Printf.eprintf "}\n%!"
         end;
 
         if Vec.size learnt_clause = 1 then
@@ -808,7 +846,6 @@ let search oc nof_conflicts nof_learnts =
           (*New variable decision: *)
           env.decisions <- env.decisions + 1;
           next := pickBranchLit env.polarity_mode env.random_var_freq;
-
           if !next = dummy_lit then
             (* Model found *)
             raise (Search Lbool.LTrue)
@@ -830,9 +867,7 @@ let search oc nof_conflicts nof_learnts =
   with Search b -> b
 
 
-let solve_lit assumps =
-  let oc = open_out "./trace_decision_minisat" in
-  (* trace decision *)
+let solve_lit oc assumps =
   Vec.clear env.model dummy_lbool;
   Vec.clear env.conflict dummy_lit;
 
@@ -842,7 +877,7 @@ let solve_lit assumps =
     Vec.copyTo assumps env.assumptions dummy_lit;
 
     let nof_conflicts = ref env.restart_first in
-    let nof_learnts = ref (nClauses () * (int_of_float env.learntsize_factor)) in
+    let nof_learnts = ref (int_of_float ((float_of_int (nClauses ())) *. env.learntsize_factor)) in
     let status = ref Lbool.LUndef in
 
     if not !debug && env.verbosity >= 1 then
@@ -884,13 +919,12 @@ let solve_lit assumps =
     end;
 
     cancelUntil 0;
-    close_out oc;
     !status = Lbool.LTrue
   end
 
-let solve () =
+let solve oc =
   let tmp = Vec.init 0 dummy_lit in
-  solve_lit tmp
+  solve_lit oc tmp
 
 
 let printStats cpu_time =
@@ -901,5 +935,4 @@ let printStats cpu_time =
     Printf.eprintf "propagations        : %d   (%.0f /sec)\n%!" env.propagations ((float_of_int env.propagations) /. cpu_time);
     Printf.eprintf "conflict literals   : %d   (%.0f /sec)\n%!" env.tot_literals ((float_of_int (env.max_literals - env.tot_literals)) /. (float_of_int env.max_literals));
     Printf.eprintf "CPU time            : %f s\n%!" cpu_time
-  end
-
+  end;
