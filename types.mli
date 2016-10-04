@@ -65,7 +65,7 @@ module Clause : sig
     (* Dans minisat c'est alloué contigue au record *)
   }
 
-  val clause_new : Lit.Array.t -> learnt:bool -> t
+  val clause_new : Lit.Array.t -> int -> learnt:bool -> t
   val size : t -> int
   val get_activity : t -> float
   val set_activity : t -> float -> unit

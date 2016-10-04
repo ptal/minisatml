@@ -142,7 +142,7 @@ let heap_comp i j = (Vec.get env.activity i) > (Vec.get env.activity j)
 
 
 let value_of_int v = Vec.get env.assigns v
-let value l = if Lit.var l > Vec.size env.assigns then begin Printf.eprintf "plop %d" (Lit.var l); Lbool.LUndef end else if Lit.sign l then Vec.get env.assigns (Lit.var l) else Lbool.inv (Vec.get env.assigns (Lit.var l))
+let value l = if Lit.sign l then Vec.get env.assigns (Lit.var l) else Lbool.inv (Vec.get env.assigns (Lit.var l))
 
 
 let printLit l =
@@ -165,8 +165,13 @@ let locked c = (value (Clause.get c 0)) = Lbool.LTrue && (Vec.get env.reason (Li
 let newDecisionLevel () = Vec.push env.trail_lim (Vec.size env.trail) 0
 
 let decisionLevel () = Vec.size env.trail_lim
-let abstractLevel v = Vec.get env.level v
-let modelValue l = Vec.get env.model (Lit.var l)
+let abstractLevel v = ((Vec.get env.level v) land 31) lsl 1
+let modelValue l =
+  (* Printf.eprintf "lit %s (%b)" (printLit l) (Lit.sign l); *)
+  (* Lbool.chap (Vec.get env.model (Lit.var l)) (Lit.sign l) *)
+
+if Lit.sign l then Vec.get env.model (Lit.var l) else Lbool.inv ((Vec.get env.model (Lit.var l)))
+
 
 let nAssigns () = Vec.size env.trail
 let nClauses () = Vec.size env.clauses
@@ -221,7 +226,7 @@ let pickBranchLit p v =
       done;
     with Break -> () end;
   let l = if !next = dummy_var then dummy_lit else Lit.lit !next false in
-  if false && !debug && !next <> dummy_var then begin
+  if !debug && !next <> dummy_var then begin
     Printf.eprintf "picked %s from:\n%!" (printLit l);
     for i = 0 to Vec.size env.activity -1 do
       Printf.eprintf "%d -> %f\n%!" (i+1) (Vec.get env.activity i)
@@ -232,6 +237,7 @@ let pickBranchLit p v =
 
 
 let cancelUntil level =
+  (* Printf.eprintf " Cancel until %d\n%!" level; *)
   if decisionLevel () > level then begin
     for c = (Vec.size env.trail) -1 downto Vec.get env.trail_lim level do
       let x  = Lit.var (Vec.get env.trail c) in
@@ -270,7 +276,7 @@ let newVar () =
 
 let uncheckedEnqueue_clause p from =
   assert ((value p) = Lbool.LUndef);
-  Vec.set env.assigns (Lit.var p) (if Lit.sign p then Lbool.LTrue else Lbool.LFalse);
+  Vec.set env.assigns (Lit.var p) (Lbool.lbool_of_bool (Lit.sign p));
   Vec.set env.level (Lit.var p) (decisionLevel ());
   Vec.set env.reason (Lit.var p) from;
   Vec.push env.trail p dummy_lit;
@@ -310,7 +316,6 @@ exception FoundWatch
   |      * the propagation queue is empty, even if there was a conflict.
   |_____________________________________________________________________________*)
 let propagate () =
-  (* Printf.eprintf "Propagate\n%!"; *)
   let confl = ref dummy_clause in
   let num_props = ref 0 in
 
@@ -410,7 +415,6 @@ let propagate () =
   done;
   env.propagations <- env.propagations + !num_props;
   env.simpDB_props <- env.simpDB_props - !num_props;
-  (* Printf.eprintf "Propagate End\n%!"; *)
   !confl
 
 let attachClause c =
@@ -431,22 +435,21 @@ let addClause ps =
     (* Check if clause is satisfied and remove false/duplicate literals: *)
     Vec.sort compare ps;
     let j = ref 0 in
-    let ii = ref 0 in
+    let i = ref 0 in
     let p = ref dummy_lit in
     try
-      for i = 0 to Vec.size ps -1 do
-        if value (Vec.get ps i) = Lbool.LTrue || (Vec.get ps i) = (Lit.tild !p)
+      while !i < Vec.size ps do
+        if value (Vec.get ps !i) = Lbool.LTrue || (Vec.get ps !i) = (Lit.tild !p)
         then raise (Return true)
-        else if value (Vec.get ps i) <> Lbool.LFalse && (Vec.get ps i) <> !p
+        else if value (Vec.get ps !i) <> Lbool.LFalse && (Vec.get ps !i) <> !p
         then begin
-          p := Vec.get ps i;
+          p := Vec.get ps !i;
           Vec.set ps !j !p;
           incr j;
         end;
-        ii := i
+        incr i
       done;
-
-      Vec.shrink ps (!ii - !j);
+      Vec.shrink ps (!i - !j);
       match Vec.size ps with
       | 0 -> env.ok <- false;false
       | 1 ->
@@ -455,8 +458,7 @@ let addClause ps =
         let ok = propagate () = dummy_clause in
         env.ok <- ok; ok
       | n ->
-        let c = Clause.clause_new (Vec.get_data ps) false in
-        (* printClause c; *)
+        let c = Clause.clause_new (Vec.get_data ps) (Vec.size ps) false in
         Vec.push env.clauses c dummy_clause;
         attachClause c;
 
@@ -612,7 +614,7 @@ let analyze confl out_learnt out_btlevel =
 (* Check if 'p' can be removed. 'abstract_levels' is used to abort early if the algorithm is visiting literals at levels that cannot be removed later. *)
 let litRedundant p abstract_levels =
   Vec.clear env.analyze_stack dummy_lit;
-  Vec.push env.analyze_stack 0 dummy_lit;
+  Vec.push env.analyze_stack p dummy_lit;
   let top = Vec.size env.analyze_stack in
   try
     while Vec.size env.analyze_stack > 0 do
@@ -643,8 +645,9 @@ let litRedundant p abstract_levels =
 
 let removeSatisfied cs =
   let j = ref 0 in
-  for i = 0 to Vec.size cs - 1 do
-    let c = Vec.get cs i in
+  let i = ref 0 in
+  while !i < Vec.size cs - 1 do
+    let c = Vec.get cs !i in
     if !debug then begin
       Printf.eprintf "Remove %s:{ " (if Clause.learnt c then "L" else "C");
       Clause.iter (fun l -> Printf.eprintf "%s ; " (printLit l)) c;
@@ -655,7 +658,8 @@ let removeSatisfied cs =
     else begin
       Vec.set cs !j c;
       incr j;
-    end
+    end;
+    incr i
   done;
   Vec.shrink cs (Vec.size cs - !j)
 
@@ -680,7 +684,7 @@ let simplify () =
   (*   env.simpDB_props <- env.clauses_literals + env.learnts_literals; *)
   (*   true *)
   (* end *)
-  false
+  true
 
 let progressEstimate () =
   let progress = ref 0. in
@@ -797,7 +801,7 @@ let search oc nof_conflicts nof_learnts =
         if Vec.size learnt_clause = 1 then
           uncheckedEnqueue (Vec.get learnt_clause 0)
         else begin
-          let c = Clause.clause_new (Vec.get_data learnt_clause) true in
+          let c = Clause.clause_new (Vec.get_data learnt_clause) (Vec.size learnt_clause) true in
           Vec.push env.learnts c dummy_clause;
           attachClause c;
           claBumpActivity c;
@@ -809,7 +813,9 @@ let search oc nof_conflicts nof_learnts =
       end
       else begin
         (* No Conflict *)
-        if nof_conflicts >= 0 && !conflictC >= nof_conflicts then begin
+        (* Printf.eprintf " nof conflic : %d, conflictc : %d\n%!" nof_conflicts !conflictC; *)
+        if nof_conflicts >= 0. && float_of_int !conflictC >= nof_conflicts then begin
+          (* Printf.eprintf " Max conflict\n%!"; *)
           (* Reached bound on number of conflicts: *)
           env.progress_estimate <- progressEstimate ();
           cancelUntil 0;
@@ -819,7 +825,7 @@ let search oc nof_conflicts nof_learnts =
         (* Simplify the set of problem clauses: *)
         if decisionLevel () = 0 && not (simplify ()) then raise (Search Lbool.LFalse);
 
-        if nof_learnts >= 0 && ((Vec.size env.learnts) - nAssigns ()) >= nof_learnts then
+        if nof_learnts >= 0. && float_of_int ((Vec.size env.learnts) - nAssigns ()) >= nof_learnts then
           (* Reduce the set of learnt clauses: *)
           reduceDB ();
 
@@ -841,7 +847,6 @@ let search oc nof_conflicts nof_learnts =
             done
           with Break -> ()
         end;
-
         if !next = dummy_lit then begin
           (*New variable decision: *)
           env.decisions <- env.decisions + 1;
@@ -850,7 +855,6 @@ let search oc nof_conflicts nof_learnts =
             (* Model found *)
             raise (Search Lbool.LTrue)
         end;
-
         (* Increase decision level and enqueue next *)
         assert (value !next = Lbool.LUndef);
         newDecisionLevel ();
@@ -876,8 +880,8 @@ let solve_lit oc assumps =
   else begin
     Vec.copyTo assumps env.assumptions dummy_lit;
 
-    let nof_conflicts = ref env.restart_first in
-    let nof_learnts = ref (int_of_float ((float_of_int (nClauses ())) *. env.learntsize_factor)) in
+    let nof_conflicts = ref (float_of_int env.restart_first) in
+    let nof_learnts = ref ((float_of_int (nClauses ())) *. env.learntsize_factor) in
     let status = ref Lbool.LUndef in
 
     if not !debug && env.verbosity >= 1 then
@@ -892,14 +896,14 @@ let solve_lit oc assumps =
           (Heap.size env.order_heap)
           (nClauses ())
           env.clauses_literals
-          !nof_learnts
+          (int_of_float !nof_learnts)
           (nLearnts ())
           (try (float_of_int (env.learnts_literals/(nLearnts()))) with e -> 0.)
           (env.progress_estimate*.100.);
-
       status := search oc !nof_conflicts !nof_learnts;
-      nof_conflicts := !nof_conflicts * (int_of_float env.restart_inc);
-      nof_learnts := !nof_learnts * (int_of_float env.learntsize_inc);
+      (* Printf.eprintf "end Search\n"; *)
+      nof_conflicts := !nof_conflicts *. env.restart_inc;
+      nof_learnts := !nof_learnts *. env.learntsize_inc;
     done;
     if not !debug && env.verbosity >= 1 then
       Printf.eprintf "===============================================================================\n";

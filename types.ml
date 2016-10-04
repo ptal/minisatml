@@ -81,20 +81,15 @@ module Clause = struct
     !abstraction
 
   exception Break
-  let clause_new (ps:Lit.Array.t) ~learnt =
-    let size = ref 0 in
-    begin
-      try Lit.Array.iter (fun a -> if a >= 0 then incr size else raise Break) ps;
-      with Break -> ()
-    end;
+  let clause_new (ps:Lit.Array.t) size ~learnt =
 
     let extra =
       if learnt then Act 0.
       else Abst (calc_abstraction ps)
     in
-    { size = !size;
+    { size = size;
       extra;
-      data = ps;
+      data = Array.sub ps 0 size;
       learnt;
       (* b2 = false; *)
       (* b3 = false *)

@@ -25,7 +25,7 @@ val nLearnts : unit -> int
 val nVars : unit -> int
 
 val insertVarOrder : var -> unit
-val pickBranchLit : polarity -> float -> Lit.t
+val pickBranchLit :  polarity -> float -> Lit.t
 val newDecisionLevel : unit -> unit
 val uncheckedEnqueue_clause : Lit.t -> Clause.t -> unit
 val uncheckedEnqueue : Lit.t -> unit
@@ -37,7 +37,7 @@ val cancelUntil : int -> unit
 val analyze : Clause.t ref -> Lit.t Vec.t -> int ref -> unit
 val analyzeFinal : Lit.t -> Lit.t Vec.t -> unit
 val litRedundant : Lit.t -> int -> bool
-val search : out_channel -> int -> int -> Lbool.t
+val search : out_channel -> float -> float -> Lbool.t
 val reduceDB : unit -> unit
 val removeSatisfied : Clause.t Vec.t -> unit
 

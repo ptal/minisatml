@@ -74,12 +74,15 @@ module Heap = struct
     Printf.eprintf "\n%!";
     for i = 0 to size t -1 do
       Printf.eprintf "%d:%d, %!" (Vec.get t.indice i) (Vec.get t.heap i)
-    done
+    done;
+    Printf.eprintf "\n%!"
+
 
   let rec heapProperty t i =
     i >= Vec.size t.heap || (i = 0 || (Vec.get t.heap i >= Vec.get t.heap (parent i)) && heapProperty t (left i) && heapProperty t (right i))
 
   let insert lt t n =
+    (* Printf.eprintf " Heap Insert %d\n%!" n; *)
     Vec.growTo t.indice (n+1) (-1);
     assert (not (inHeap t n));
     Vec.set t.indice n (Vec.size t.heap);
@@ -87,12 +90,16 @@ module Heap = struct
     percolateUp lt t (Vec.get t.indice n)
 
   let removeMin lt t =
+    (* Printf.eprintf " Heap remove min\n%!"; *)
+    (* print t; *)
+    (* Printf.printf "heap size %d\n%!" (Vec.size t.heap); *)
     let x = Vec.get t.heap 0 in
     Vec.set t.heap 0 (Vec.last t.heap);
     Vec.set t.indice (Vec.get t.heap 0) 0;
     Vec.set t.indice x (-1);
     Vec.pop t.heap;
     if Vec.size t.heap > 1 then percolateDown lt t 0;
+    (* Printf.eprintf " end Heap remove min %d\n%!" x; *)
     x
 
   let decrease lt t n =
