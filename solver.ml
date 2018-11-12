@@ -186,12 +186,12 @@ let varDecayActivity () =
 
 let varBumpActivity v =
   Vec.set env.activity v ((Vec.get env.activity v) +. env.var_inc);
-  if (Vec.get env.activity v) > (1.**100.) then begin
+  if (Vec.get env.activity v) > (1e100) then begin
     (* Rescale *)
     for i = 0 to nVars () - 1 do
-      Vec.set env.activity i ((Vec.get env.activity i) *. (1.**(-100.)));
+      Vec.set env.activity i ((Vec.get env.activity i) *. (1e-100));
     done;
-    env.var_inc <- env.var_inc *. (1.**(-100.))
+    env.var_inc <- env.var_inc *. (1e-100)
   end;
 
   (* Update order_heap with respect to new activity: *)
@@ -204,11 +204,11 @@ let claDecayActivity () =
   env.cla_inc <- env.cla_inc *. env.clause_decay
 let claBumpActivity c =
   Clause.set_activity c ((Clause.get_activity c) +. env.cla_inc);
-  if Clause.get_activity c > 1.**20. then begin
+  if Clause.get_activity c > 1e20 then begin
     for i = 0 to Vec.size env.learnts - 1 do
-      Clause.set_activity (Vec.get env.learnts i) (Clause.get_activity (Vec.get env.learnts i) *. (1.**(-20.)))
+      Clause.set_activity (Vec.get env.learnts i) (Clause.get_activity (Vec.get env.learnts i) *. (1e-20))
     done;
-    env.cla_inc <- env.cla_inc *. (1.**(-20.))
+    env.cla_inc <- env.cla_inc *. (1e-20)
   end
 
 let pickBranchLit p v =
