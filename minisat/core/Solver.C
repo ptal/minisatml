@@ -1,8 +1,11 @@
 #include "Solver.h"
+#include "SolverTypes.h"
 #include "Sort.h"
 #include <cmath>
 #include <fstream>
 
+#include <stdlib.h>
+#include <cstdlib>
 //=================================================================================================
 // Constructor/Destructor:
 
@@ -92,7 +95,7 @@ bool Solver::addClause(vec<Lit>& ps)
         uncheckedEnqueue(ps[0]);
         return ok = (propagate() == NULL);
     }else{
-        Clause* c = Clause_new(ps, false);
+        class Clause* c = Clause_new(ps, false);
         clauses.push(c);
         attachClause(*c);
         if (d) {

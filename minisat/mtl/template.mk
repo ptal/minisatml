@@ -16,7 +16,7 @@ RCOBJS     = $(addsuffix r,  $(COBJS))
 EXEC      ?= $(notdir $(shell pwd))
 LIB       ?= $(EXEC)
 
-CXX       ?= g++
+CXX       ?= g++ -E
 CFLAGS    ?= -Wall
 LFLAGS    ?= -Wall
 

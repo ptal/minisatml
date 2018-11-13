@@ -814,7 +814,7 @@ let search oc nof_conflicts nof_learnts =
       else begin
         (* No Conflict *)
         (* Printf.eprintf " nof conflic : %d, conflictc : %d\n%!" nof_conflicts !conflictC; *)
-        if nof_conflicts >= 0. && float_of_int !conflictC >= nof_conflicts then begin
+        if nof_conflicts >= 0 && !conflictC >= nof_conflicts then begin
           (* Printf.eprintf " Max conflict\n%!"; *)
           (* Reached bound on number of conflicts: *)
           env.progress_estimate <- progressEstimate ();
@@ -825,7 +825,7 @@ let search oc nof_conflicts nof_learnts =
         (* Simplify the set of problem clauses: *)
         if decisionLevel () = 0 && not (simplify ()) then raise (Search Lbool.LFalse);
 
-        if nof_learnts >= 0. && float_of_int ((Vec.size env.learnts) - nAssigns ()) >= nof_learnts then
+        if nof_learnts >= 0 && (Vec.size env.learnts) - nAssigns () >= nof_learnts then
           (* Reduce the set of learnt clauses: *)
           reduceDB ();
 
@@ -900,7 +900,7 @@ let solve_lit oc assumps =
           (nLearnts ())
           (try (float_of_int (env.learnts_literals/(nLearnts()))) with e -> 0.)
           (env.progress_estimate*.100.);
-      status := search oc !nof_conflicts !nof_learnts;
+      status := search oc (int_of_float !nof_conflicts) (int_of_float !nof_learnts);
       (* Printf.eprintf "end Search\n"; *)
       nof_conflicts := !nof_conflicts *. env.restart_inc;
       nof_learnts := !nof_learnts *. env.learntsize_inc;

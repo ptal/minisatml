@@ -135,6 +135,14 @@ class Heap {
     void increase  (int n) { decrease(n); }
     int  getmin    ()      { return removeMin(); }
 
+    void print () {
+      printf ("Print heap\n");
+      for (int i = 0 ; i < heap.size(); i++){
+        printf ("  %d:%d\n",indices[i],heap[i]);
+      }
+      printf ("\n");
+    }
+
 };
 //=================================================================================================
 #endif

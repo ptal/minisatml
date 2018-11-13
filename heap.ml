@@ -71,9 +71,9 @@ module Heap = struct
 
 
   let print t =
-    Printf.eprintf "\n%!";
+    Printf.eprintf "Print heap\n%!";
     for i = 0 to size t -1 do
-      Printf.eprintf "%d:%d, %!" (Vec.get t.indice i) (Vec.get t.heap i)
+      Printf.eprintf "  %d:%d\n%!" (Vec.get t.indice i) (Vec.get t.heap i)
     done;
     Printf.eprintf "\n%!"
 

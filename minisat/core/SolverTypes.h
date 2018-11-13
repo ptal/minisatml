@@ -2,7 +2,8 @@
 #define SolverTypes_h
 #include <cassert>
 #include <stdint.h>
-
+#include <stdlib.h>
+#include <cstdlib>
 //=================================================================================================
 // Variables, literals, lifted booleans, clauses:
 // NOTE! Variables are just integers. No abstraction here. They should be chosen from 0..N, so that they can be used as array indices.
@@ -94,7 +95,7 @@ public:
     friend Clause* Clause_new(const V& ps, bool learnt = false) {
         assert(sizeof(Lit)      == sizeof(uint32_t));
         assert(sizeof(float)    == sizeof(uint32_t));
-        void* mem = malloc(sizeof(Clause) + sizeof(uint32_t)*(ps.size()));
+        void* mem = std::malloc(sizeof(Clause) + sizeof(uint32_t)*(ps.size()));
         return new (mem) Clause(ps, learnt); }
 
     int          size        ()      const   { return size_etc >> 3; }
