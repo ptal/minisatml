@@ -20,7 +20,7 @@ CXX       ?= g++ -E
 CFLAGS    ?= -Wall
 LFLAGS    ?= -Wall
 
-COPTIMIZE ?= -O0
+COPTIMIZE ?= -O3
 
 .PHONY : s p d r rs lib libd clean 
 
