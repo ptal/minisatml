@@ -1,0 +1,8 @@
+c analyse de conflit ne se fait pas bien -> assert false
+-4 -5 0
+6 -3 0
+-5 -6 0
+-2 5  0
+-1 4 3 0
+
+
