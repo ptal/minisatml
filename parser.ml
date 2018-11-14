@@ -23,7 +23,7 @@ let read_sign c cin =
 let rec parse_int n cin =
   try
     let c = input_char cin in
-    if c = ' ' || c = '\n' then n else parse_int (n * 10 + (to_digit c)) cin
+    if c = ' ' || c = '\n' || c = '\t' then n else parse_int (n * 10 + (to_digit c)) cin
   with End_of_file -> n
 
 let read_dims c1 cin =

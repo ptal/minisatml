@@ -6,6 +6,8 @@ type var
 type polarity
 
 val set_debug : bool -> unit
+val set_trace : bool -> unit
+val set_verbosity : int -> unit
 
 val newVar_var : bool -> bool -> var
 val newVar : unit -> var

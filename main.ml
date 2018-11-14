@@ -14,29 +14,48 @@ let add_clauses clauses =
 
 
 let main =
+  let file = Sys.argv.(1) in
+
+  let verbosity =
+    try int_of_string Sys.argv.(2)
+    with _ -> 0
+  in
+  let trace =
+    try bool_of_string Sys.argv.(3)
+    with _ -> false
+  in
+  let debug =
+    try bool_of_string Sys.argv.(4)
+    with _ -> false
+  in
+  Solver.set_verbosity verbosity;
+  Solver.set_debug debug;
+  Solver.set_trace trace;
+
   let oc = open_out "./trace_decision_satml" in
-  
   Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _signum -> Printf.eprintf "\nTERMINATED\n%!";Solver.printStats 0.;close_out oc;exit 2));
 
-  Solver.set_debug  false;
   (* Set time counter *)
   let start_time = Unix.gettimeofday () in
 
-  let file = Sys.argv.(1) in
 
-  Printf.eprintf
-    "============================[ Problem Statistics ]=============================\n%!";
-  Printf.eprintf
-    "|                                                                             |\n%!";
+  if verbosity >= 1 then begin
+    Printf.eprintf
+      "============================[ Problem Statistics ]=============================\n%!";
+    Printf.eprintf
+      "|                                                                             |\n%!";
+  end;
 
   let clauses, nbvars, nbcls = Parser.parse file in
 
-  Printf.eprintf
-    "|  Number of variables:  %-12d                                         |\n%!"
-    nbvars;
-  Printf.eprintf
-    "|  Number of clauses:    %-12d                                         |\n%!"
-    nbcls;
+  if verbosity >= 1 then begin
+    Printf.eprintf
+      "|  Number of variables:  %-12d                                         |\n%!"
+      nbvars;
+    Printf.eprintf
+      "|  Number of clauses:    %-12d                                         |\n%!"
+      nbcls;
+  end;
 
   (*  Set option input *)
   add_clauses clauses;
@@ -53,9 +72,10 @@ let main =
   (* Printf.eprintf "Parse time %f\n" (parse_time -. start_time); *)
   (* Printf.eprintf "Solve time %f\n" (end_time -. parse_time); *)
 
-  Solver.printStats (end_time -. start_time);
+  if verbosity >= 1 then
+    Solver.printStats (end_time -. start_time);
 
-  Printf.eprintf "\n%s\n%!" (if ret then "SATISFIABLE" else "UNSATISFIABLE");
+  Printf.eprintf "%s\n%!" (if ret then "sat" else "unsat");
 
   close_out oc;
 

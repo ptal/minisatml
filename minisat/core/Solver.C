@@ -22,7 +22,7 @@ Solver::Solver() :
     , expensive_ccmin  /*(true)*/(false)
   , polarity_mode    (polarity_false)
   , verbosity        (0)
-
+  , trace            (false)
     // Statistics: (formerly in 'SolverStats')
     //
   , starts(0), decisions(0), rnd_decisions(0), propagations(0), conflicts(0)
@@ -760,11 +760,12 @@ lbool Solver::search(int nof_conflicts, int nof_learnts)
             assert(value(next) == l_Undef);
             newDecisionLevel();
 
+            if (trace){
 			sprintf(atm, "%s%d:%c\n", sign(next) ? "-" : "", 
 			var(next)+1, 
 			value(next) == l_True ? '1' : (value(next) == l_False ? '0' : 'X'));
-
 			fs << atm;
+            }
             if (d) {
               printf ("(%dth) I decide the atom ", decisions);
               printLit(next);

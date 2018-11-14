@@ -79,6 +79,7 @@ let dummy_polarity = PTrue
 let dummy_var = -1
 
 let debug = ref false
+let trace = ref false
 
 let env = {
   model = Vec.init 0 dummy_lbool;
@@ -112,7 +113,7 @@ let env = {
   learntsize_inc = 1.1;
   expensive_ccmin = false;
   polarity_mode = dummy_polarity;
-  verbosity = 1;
+  verbosity = 0;
 
   starts = 0;
   decisions = 0;
@@ -137,6 +138,11 @@ let env = {
 let set_debug b =
   debug := b
 
+let set_trace b =
+  trace := b
+
+let set_verbosity n =
+  env.verbosity <- n
 
 let heap_comp i j = (Vec.get env.activity i) > (Vec.get env.activity j)
 
@@ -859,7 +865,8 @@ let search oc nof_conflicts nof_learnts =
         assert (value !next = Lbool.LUndef);
         newDecisionLevel ();
 
-        Printf.fprintf oc "%s\n" (printLit !next);
+        if !trace then
+          Printf.fprintf oc "%s\n" (printLit !next);
 
         if !debug then
           Printf.eprintf "(%dth) I decide the atom %s at level %d\n" env.decisions (printLit !next) (decisionLevel ());

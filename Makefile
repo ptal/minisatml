@@ -22,12 +22,12 @@ ML = 	vec.ml \
 .SUFFIXES: .mli .ml .cmi .cmo .cmx .mll .mly
 
 all:
-	$(OCAMLOPT) -Oclassic $(MLI)
-	$(OCAMLOPT) -Oclassic -o $(NAME)_o0 $(INCLUDE)  $(ML)
-
-o1:
 	$(OCAMLOPT) $(MLI)
 	$(OCAMLOPT) -o $(NAME)_o1 -g $(INCLUDE)  $(ML)
+
+o1:
+	$(OCAMLOPT) -Oclassic $(MLI)
+	$(OCAMLOPT) -Oclassic -o $(NAME)_o0 $(INCLUDE)  $(ML)
 
 o2:
 	$(OCAMLOPT) -O2 $(OPTIONS) $(MLI)

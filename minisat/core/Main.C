@@ -139,7 +139,7 @@ static void parse_DIMACS_main(B& in, Solver& S) {
             if (match(in, "p cnf")){
               int vars    = parseInt(in);
               int clauses = parseInt(in);
-              if (true) {
+              if (S.verbosity >= 1) {
                 reportf("|  Number of variables:  %-12d                                         |\n", vars);
                 reportf("|  Number of clauses:    %-12d                                         |\n", clauses);
               }
@@ -194,6 +194,7 @@ void printUsage(char** argv)
     reportf("  -decay         = <num> [ 0 - 1 ]\n");
     reportf("  -rnd-freq      = <num> [ 0 - 1 ]\n");
     reportf("  -verbosity     = {0,1,2}\n");
+    reportf("  -trace         = {true,false}\n");
     reportf("\n");
 }
 
@@ -209,8 +210,8 @@ const char* hasPrefix(const char* str, const char* prefix)
 int main(int argc, char** argv)
 {
     Solver      S;
-    S.verbosity = 1;
-
+    S.verbosity = 0;
+    S.trace = false;
 
     int         i, j;
     const char* value;
@@ -247,6 +248,12 @@ int main(int argc, char** argv)
                 exit(0); }
             S.verbosity = verbosity;
 
+        }else if ((value = hasPrefix(argv[i], "-trace="))){
+            if (strcmp(value, "true") == 0)
+                S.trace = true;
+            else
+                S.trace = false;
+
         }else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "-help") == 0 || strcmp(argv[i], "--help") == 0){
             printUsage(argv);
             exit(0);
@@ -280,7 +287,7 @@ int main(int argc, char** argv)
     if (in == NULL)
         reportf("ERROR! Could not open file: %s\n", argc == 1 ? "<stdin>" : argv[1]), exit(1);
     
-    if (true) {
+    if (S.verbosity >= 1) {
     reportf("============================[ Problem Statistics ]=============================\n");
     reportf("|                                                                             |\n");
     }
@@ -300,9 +307,11 @@ int main(int argc, char** argv)
     }
 
     bool ret = S.solve();
-    printStats(S);
-    reportf("\n");
-    printf(ret ? "SATISFIABLE\n" : "UNSATISFIABLE\n");
+    if(S.verbosity >= 1){
+      printStats(S);
+      reportf("\n");
+    }
+    printf(ret ? "sat\n" : "unsat\n");
     if (res != NULL){
         if (ret){
             fprintf(res, "SAT\n");
