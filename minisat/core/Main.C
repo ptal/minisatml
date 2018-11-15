@@ -324,9 +324,9 @@ int main(int argc, char** argv)
         fclose(res);
     }
 
-    exit(ret ? 10 : 20);     // (faster than "return", which will invoke the destructor for 'Solver')
+    exit(0);     // (faster than "return", which will invoke the destructor for 'Solver')
 
 #ifdef NDEBUG
-    exit(ret ? 10 : 20);     // (faster than "return", which will invoke the destructor for 'Solver')
+    exit(0);     // (faster than "return", which will invoke the destructor for 'Solver')
 #endif
 }
