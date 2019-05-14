@@ -37,7 +37,7 @@ type env = {
   order_heap : var Heap.t;
 
   mutable var_decay : float;
-  mutable clause_decay : float;
+  mutable clause_decay : int;
   mutable random_var_freq : float;
   mutable restart_first : int;
   mutable restart_inc : float;
@@ -56,7 +56,7 @@ type env = {
   mutable learnts_literals : int;
   mutable max_literals : int;
   mutable tot_literals : int;
-  mutable cla_inc : float;
+  mutable cla_inc : int;
   mutable var_inc : float;
   mutable ok : bool;
   mutable qhead : int;
@@ -72,8 +72,7 @@ let dummy_lit = Lit.lit (-1) false
 let dummy_lbool = Lbool.LUndef
 let dummy_clause = {
   Clause.size = 0;
-  Clause.extra = Clause.Abst 0;
-  Clause.learnt = false;
+  Clause.act = false;
   Clause.data = Array.make 0 dummy_lit;}
 let dummy_polarity = PTrue
 let dummy_var = -1
@@ -105,7 +104,7 @@ let env = {
   order_heap = Heap.init dummy_lit;
 
   var_decay = 1. /. 0.95;
-  clause_decay = 1. /. 0.999;
+  clause_decay = 1;
   random_var_freq = 0.02;
   restart_first = 100;
   restart_inc = 1.5;
@@ -124,7 +123,7 @@ let env = {
   learnts_literals = 0;
   max_literals = 0;
   tot_literals = 0;
-  cla_inc = 1.;
+  cla_inc = 1;
   var_inc = 1.;
   ok = true;
   qhead = 0;
@@ -207,14 +206,15 @@ let varBumpActivity v =
 
 
 let claDecayActivity () =
-  env.cla_inc <- env.cla_inc *. env.clause_decay
+  env.cla_inc <- env.cla_inc * env.clause_decay
 let claBumpActivity c =
-  Clause.set_activity c ((Clause.get_activity c) +. env.cla_inc);
-  if Clause.get_activity c > 1e20 then begin
+  Clause.set_activity c ((Clause.get_activity c) + env.cla_inc);
+  if Clause.get_activity c > (int_of_float 1e20) then begin
     for i = 0 to Vec.size env.learnts - 1 do
-      Clause.set_activity (Vec.get env.learnts i) (Clause.get_activity (Vec.get env.learnts i) *. (1e-20))
+      Clause.set_activity (Vec.get env.learnts i) (Clause.get_activity (Vec.get
+  env.learnts i) * (int_of_float 1e-20))
     done;
-    env.cla_inc <- env.cla_inc *. (1e-20)
+    env.cla_inc <- env.cla_inc * (int_of_float 1e-20)
   end
 
 let pickBranchLit p v =
@@ -340,7 +340,7 @@ let propagate () =
     if !debug then begin
       Printf.eprintf "I propagate the atom %s\n%s watches the following clauses:\n%!" (printLit p) (printLit p);
       for i = 0 to Vec.size ws -1 do
-        Printf.eprintf " >%s:{ %!" (if Clause.learnt (Vec.get ws i) then "L" else "C");
+        (* Printf.eprintf " >%s:{ %!" (if Clause.learnt (Vec.get ws i) then "L" else "C"); *)
         for j = 0 to Clause.size (Vec.get ws i) -1 do
           Printf.eprintf "%s ; " (printLit (Clause.get (Vec.get ws i) j));
         done;
@@ -353,7 +353,7 @@ let propagate () =
       incr i;
 
       if !debug then begin
-        Printf.eprintf "Propagate in clause %s:{ %!" (if Clause.learnt c then "L" else "C");
+        (* Printf.eprintf "Propagate in clause %s:{ %!" (if Clause.learnt c then "L" else "C"); *)
         Clause.iter (fun l ->
             Printf.eprintf "%s ; %!" (printLit l)
           ) c;
@@ -411,7 +411,7 @@ let propagate () =
     if !debug then begin
       Printf.eprintf "shrink  %d elements\n%s watches the following clauses:\n%!" dead_part (printLit p);
       Vec.iter (fun c ->
-          Printf.eprintf " >%s:{ %!" (if Clause.learnt c then "L" else "C");
+          (* Printf.eprintf " >%s:{ %!" (if Clause.learnt c then "L" else "C"); *)
           Clause.iter (fun l ->
               Printf.eprintf "%s ; %!" (printLit l)
             ) c;

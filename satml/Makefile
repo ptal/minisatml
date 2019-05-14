@@ -25,9 +25,13 @@ all:
 	$(OCAMLOPT) $(MLI)
 	$(OCAMLOPT) -o $(NAME)_o1 -g $(INCLUDE)  $(ML)
 
-o1:
+o0:
+	$(OCAMLOPT) $(MLI)
+	$(OCAMLOPT) -o $(NAME)_o0 $(INCLUDE)  $(ML)
+
+oclassic:
 	$(OCAMLOPT) -Oclassic $(MLI)
-	$(OCAMLOPT) -Oclassic -o $(NAME)_o0 $(INCLUDE)  $(ML)
+	$(OCAMLOPT) -Oclassic -o $(NAME)_oclassic $(INCLUDE)  $(ML)
 
 o2:
 	$(OCAMLOPT) -O2 $(OPTIONS) $(MLI)

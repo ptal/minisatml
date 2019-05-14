@@ -46,15 +46,11 @@ end
 
 
 module Clause : sig
-  type extra =
-    | Abst of int  (* int32 dans minisat: sizeof = 4 *)
-    | Act of float (* float dans minisat: sizeof = 4 *)
 
   type t = {
     mutable size : int;
     (* suffisement petit pour pouvoir caser learnt dedans *)
-    mutable extra : extra;
-    learnt : bool;
+    mutable act : bool ;
     (* dans minisat: casé dans le bit de poids faible de la taille *)
 
     (* mutable b2 : bool; *)
@@ -67,14 +63,14 @@ module Clause : sig
 
   val clause_new : Lit.Array.t -> int -> learnt:bool -> t
   val size : t -> int
-  val get_activity : t -> float
-  val set_activity : t -> float -> unit
-  val abstraction : t -> int
+  val get_activity : t -> int
+  val set_activity : t -> int -> unit
 
   (* val shrink : t -> int -> unit *)
   (* val pop : t -> unit *)
-  val learnt : t -> bool
 
+  val learnt : t -> bool
+  
   (* Ça a l'air inutile... *)
   (* val set_mark : t -> bool * bool -> unit *)
   (* val get_mark : t -> bool * bool *)

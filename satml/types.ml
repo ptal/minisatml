@@ -52,15 +52,11 @@ end
 
 module Clause = struct
 
-  type extra =
-    | Abst of int  (* int32 dans minisat: sizeof = 4 *)
-    | Act of float (* float dans minisat: sizeof = 4 *)
-
   type t = {
     mutable size : int;
     (* suffisement petit pour pouvoir caser learnt dedans *)
-    mutable extra : extra;
-    learnt : bool;
+    (* mutable extra : extra; *)
+    mutable act : bool;
     (* dans minisat: casé dans le bit de poids faible de la taille *)
 
     (* mutable b2 : bool; *)
@@ -71,26 +67,12 @@ module Clause = struct
     (* Dans minisat c'est alloué contigue au record *)
   }
 
-  let calc_abstraction ps =
-    let abstraction = ref 0 in
-    for i = 0 to Lit.Array.size ps - 1 do
-      abstraction :=
-        !abstraction lor
-        (1 lsl ((Lit.var (Lit.Array.get ps i)) land 31))
-    done;
-    !abstraction
-
   exception Break
   let clause_new (ps:Lit.Array.t) size ~learnt =
 
-    let extra =
-      if learnt then Act 0.
-      else Abst (calc_abstraction ps)
-    in
     { size = size;
-      extra;
+      act = learnt;
       data = Array.sub ps 0 size;
-      learnt;
       (* b2 = false; *)
       (* b3 = false *)
     }
@@ -98,15 +80,12 @@ module Clause = struct
   let size t = t.size
 
   let get_activity = function
-    | { extra = Act a } -> a
+    | { act } -> 0
     | _ -> invalid_arg "Clause.activity"
 
-  let set_activity t f =
-    t.extra <- Act f
+  let set_activity t f = ()
 
-  let abstraction = function
-    | { extra = Abst a } -> a
-    | _ -> invalid_arg "Clause.abstraction"
+  let learnt t = t.act
 
   let shrink t i =
     assert(i < size t);
@@ -114,7 +93,6 @@ module Clause = struct
 
   let pop t = shrink t 1
 
-  let learnt t = t.learnt
 
   (* let set_mark t (b2, b3) = *)
   (*   t.b2 <- b2; *)
