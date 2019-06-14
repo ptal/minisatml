@@ -3,12 +3,12 @@ open Types
 open Heap
 
 type var = int
-type polarity = PTrue | PFalse | PUser | PRnd
+type polarity = PTrue | PFalse (* | PUser | PRnd *)
 let polarity_to_bool p =
   match p with
   | PTrue -> true
   | PFalse -> false
-  | _ -> assert false
+  (* | _ -> assert false *)
 let bool_to_polarity b = if b then PTrue else PFalse
 
 exception Break
@@ -464,7 +464,7 @@ let addClause ps =
         let ok = propagate () = dummy_clause in
         env.ok <- ok; ok
       | n ->
-        let c = Clause.clause_new (Vec.get_data ps) (Vec.size ps) false in
+        let c = Clause.clause_new (Vec.get_data ps) (Vec.size ps) ~learnt:false in
         Vec.push env.clauses c dummy_clause;
         attachClause c;
 
@@ -807,7 +807,7 @@ let search oc nof_conflicts nof_learnts =
         if Vec.size learnt_clause = 1 then
           uncheckedEnqueue (Vec.get learnt_clause 0)
         else begin
-          let c = Clause.clause_new (Vec.get_data learnt_clause) (Vec.size learnt_clause) true in
+          let c = Clause.clause_new (Vec.get_data learnt_clause) (Vec.size learnt_clause) ~learnt:true in
           Vec.push env.learnts c dummy_clause;
           attachClause c;
           claBumpActivity c;

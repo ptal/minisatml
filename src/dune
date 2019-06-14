@@ -1,0 +1,22 @@
+(include_subdirs unqualified)
+
+(library
+  (name libsatml)
+  (wrapped false)
+  (libraries unix)
+  (flags (:standard -noassert -w "+a-4-32-27-42" -warn-error "+a-4-32-27-42"))
+  (ocamlopt_flags (:standard -O3))
+  ;(ocamlopt_flags (:standard -p))
+  (modules (:standard \ minisatml))
+)
+
+(executable
+ (name minisatml)
+ (public_name minisatml)
+ (package minisatml)
+ ;(ocamlopt_flags (:standard -p))
+ (flags (:standard -noassert))
+ (ocamlopt_flags (:standard -O3))
+ (modules minisatml)
+ (libraries libsatml)
+)

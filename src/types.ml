@@ -67,7 +67,7 @@ module Clause = struct
     (* Dans minisat c'est alloué contigue au record *)
   }
 
-  exception Break
+  (* exception Break *)
   let clause_new (ps:Lit.Array.t) size ~learnt =
 
     { size = size;
@@ -79,9 +79,10 @@ module Clause = struct
 
   let size t = t.size
 
-  let get_activity = function
+  let get_activity _ = 0
+  (* function
     | { act } -> 0
-    | _ -> invalid_arg "Clause.activity"
+    | _ -> invalid_arg "Clause.activity" *)
 
   let set_activity t f = ()
 

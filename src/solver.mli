@@ -1,6 +1,5 @@
 open Vec
 open Types
-open Vec
 
 type var
 type polarity

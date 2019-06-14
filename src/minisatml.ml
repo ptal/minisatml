@@ -2,7 +2,7 @@ let add_clauses clauses =
   List.iter (fun c ->
       let lit_list = List.map (fun (i,b) ->
           let l = (Types.Lit.lit (i-1) b) in
-          while i - 1 >= Solver.nVars () do Solver.newVar () done;
+          while i - 1 >= Solver.nVars () do ignore(Solver.newVar ()) done;
           l
         ) c in
 

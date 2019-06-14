@@ -54,7 +54,7 @@ let grow t min_cap dummy =
 
   let selectionSort t = ()
 
-  exception Sort
+  (* exception Sort *)
   let sort f t =
 (*  (\*    if t.size > 15 then selectionSort t *\) *)
 (* (\*     else *\) *)
@@ -63,7 +63,7 @@ let grow t min_cap dummy =
 (* (\*       let j = ref t.size in *\) *)
 
 (* (\*       while true do *\) *)
-        
+
 (* (\*         raise Sort *\) *)
 (* (\*       done; *\) *)
 (* (\* () *\) *)

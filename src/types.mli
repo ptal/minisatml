@@ -70,7 +70,7 @@ module Clause : sig
   (* val pop : t -> unit *)
 
   val learnt : t -> bool
-  
+
   (* Ça a l'air inutile... *)
   (* val set_mark : t -> bool * bool -> unit *)
   (* val get_mark : t -> bool * bool *)
