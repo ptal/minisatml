@@ -1,6 +1,4 @@
-open Vec
 
-module Heap = struct
   type 'a t = {
     heap : 'a Vec.t;
     indice : int Vec.t;
@@ -120,5 +118,3 @@ module Heap = struct
   let clear t dummy =
     Vec.clear t.indice (-1) ;
     Vec.clear t.heap dummy
-
-end

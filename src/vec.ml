@@ -1,4 +1,3 @@
-module Vec = struct
   type 'a t = {
     mutable data : 'a array;
     mutable size : int;
@@ -110,5 +109,3 @@ let grow t min_cap dummy =
 
   let fromList l sz =
     {data = Array.of_list l; size = sz; cap = sz}
-
-end

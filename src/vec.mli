@@ -1,4 +1,4 @@
-module Vec : sig
+
   type 'a t = {
     mutable data : 'a array;
     mutable size : int;
@@ -28,4 +28,3 @@ module Vec : sig
   val copyTo : 'a t -> 'a t -> 'a -> unit
   val fromList : 'a list -> int -> 'a t
   val clear : 'a t -> 'a -> unit
-end

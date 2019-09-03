@@ -1,8 +1,11 @@
-open Vec
+
 open Types
 
-type var
+type var = int
 type polarity
+
+val dummy_clause: Clause.t
+val dummy_lit: Lit.t
 
 val set_debug : bool -> unit
 val set_trace : bool -> unit
@@ -27,6 +30,7 @@ val nVars : unit -> int
 
 val insertVarOrder : var -> unit
 val pickBranchLit :  polarity -> float -> Lit.t
+val splitOnLit :  unit -> Lit.t
 val newDecisionLevel : unit -> unit
 val uncheckedEnqueue_clause : Lit.t -> Clause.t -> unit
 val uncheckedEnqueue : Lit.t -> unit

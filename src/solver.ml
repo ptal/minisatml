@@ -1,6 +1,5 @@
-open Vec
+
 open Types
-open Heap
 
 type var = int
 type polarity = PTrue | PFalse (* | PUser | PRnd *)
@@ -261,7 +260,6 @@ let setDecisionVar v b =
   if b then insertVarOrder v
 
 let okay () = env.ok
-
 
 let newVar_var sign dvar =
   let v = nVars () in
@@ -752,6 +750,10 @@ let analyzeFinal p out_conflict =
   end
 
 
+let splitOnLit () =
+  env.decisions <- env.decisions + 1;
+  pickBranchLit env.polarity_mode env.random_var_freq
+
 exception Search of Lbool.t
 (*______________________________________________________________________________
   |
@@ -876,7 +878,6 @@ let search oc nof_conflicts nof_learnts =
     done;
     Lbool.LUndef
   with Search b -> b
-
 
 let solve_lit oc assumps =
   Vec.clear env.model dummy_lbool;

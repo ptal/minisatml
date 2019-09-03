@@ -1,5 +1,3 @@
-open Vec
-
 let remove t x =
   let j = ref 0 in
   while !j < Vec.size t && Vec.get t !j <> x do incr j done;
