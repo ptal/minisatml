@@ -46,7 +46,7 @@ let grow t min_cap dummy =
   let get_data t = t.data
   let set t i v = t.data.(i) <- v
 
-  let selectionSort t = ()
+  let selectionSort _t = ()
 
   (* exception Sort *)
   let sort f t =

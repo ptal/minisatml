@@ -1,15 +1,16 @@
 url {
-  src: "https://github.com/ptal/minisatml/archive/v0.0.1.tar.gz"
+  src: "https://github.com/ptal/kobe/zipball/v0.0.0.zip"
 }
 opam-version: "2.0"
 maintainer: "Albin Coquereau <coquera@lri.fr>"
 authors: [
   "Albin Coquereau <coquera@lri.fr>"
+  "Pierre Talbot <pierre.talbot@univ-nantes.fr>"
 ]
 homepage: "https://github.com/ptal/minisatml"
 bug-reports: "https://github.com/ptal/minisatml/issues"
 dev-repo: "git+https://github.com/ptal/minisatml"
-license: "LGPL"
+license: "Apache-2.0"
 build: [
   ["dune" "subst"] {pinned}
   ["dune" "build" "-p" name "-j" jobs]

@@ -20,7 +20,7 @@ val solve : out_channel -> bool
 val okay : unit -> bool
 val setPolarity : var -> bool -> unit
 val setDecisionVar : var -> bool -> unit
-val value : var -> Lbool.t
+(* val value : var -> Lbool.t *)
 val value : Lit.t -> Lbool.t
 val modelValue : Lit.t -> Lbool.t
 val nAssigns : unit -> int

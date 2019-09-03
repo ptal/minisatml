@@ -84,16 +84,16 @@ module Clause = struct
     | { act } -> 0
     | _ -> invalid_arg "Clause.activity" *)
 
-  let set_activity t f = ()
+  let set_activity _t _f = ()
 
   let learnt t = t.act
 
-  let shrink t i =
+(*   let shrink t i =
     assert(i < size t);
     t.size <- t.size - i
 
   let pop t = shrink t 1
-
+ *)
 
   (* let set_mark t (b2, b3) = *)
   (*   t.b2 <- b2; *)

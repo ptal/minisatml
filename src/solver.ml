@@ -3,11 +3,11 @@ open Types
 
 type var = int
 type polarity = PTrue | PFalse (* | PUser | PRnd *)
-let polarity_to_bool p =
+(* let polarity_to_bool p =
   match p with
   | PTrue -> true
   | PFalse -> false
-  (* | _ -> assert false *)
+  (* | _ -> assert false *) *)
 let bool_to_polarity b = if b then PTrue else PFalse
 
 exception Break
@@ -145,7 +145,7 @@ let set_verbosity n =
 let heap_comp i j = (Vec.get env.activity i) > (Vec.get env.activity j)
 
 
-let value_of_int v = Vec.get env.assigns v
+(* let value_of_int v = Vec.get env.assigns v *)
 let value l = if Lit.sign l then Vec.get env.assigns (Lit.var l) else Lbool.inv (Vec.get env.assigns (Lit.var l))
 
 
@@ -216,7 +216,7 @@ let claBumpActivity c =
     env.cla_inc <- env.cla_inc * (int_of_float 1e-20)
   end
 
-let pickBranchLit p v =
+let pickBranchLit _p _v =
   let next = ref dummy_var in
   begin try
       while !next = dummy_var ||
@@ -461,7 +461,7 @@ let addClause ps =
         uncheckedEnqueue (Vec.get ps 0);
         let ok = propagate () = dummy_clause in
         env.ok <- ok; ok
-      | n ->
+      | _ ->
         let c = Clause.clause_new (Vec.get_data ps) (Vec.size ps) ~learnt:false in
         Vec.push env.clauses c dummy_clause;
         attachClause c;
@@ -906,7 +906,7 @@ let solve_lit oc assumps =
           env.clauses_literals
           (int_of_float !nof_learnts)
           (nLearnts ())
-          (try (float_of_int (env.learnts_literals/(nLearnts()))) with e -> 0.)
+          (try (float_of_int (env.learnts_literals/(nLearnts()))) with _ -> 0.)
           (env.progress_estimate*.100.);
       status := search oc (int_of_float !nof_conflicts) (int_of_float !nof_learnts);
       (* Printf.eprintf "end Search\n"; *)

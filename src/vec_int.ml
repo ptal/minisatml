@@ -52,10 +52,10 @@ let grow t min_cap dummy =
   let get_data t = t.data
   let set t i v = t.data.(i+1) <- v
 
-  let selectionSort t = ()
+  let selectionSort _ = ()
 
   (* exception Sort *)
-  let sort f t =
+  let sort _f _t =
 (*  (\*    if t.size > 15 then selectionSort t *\) *)
 (* (\*     else *\) *)
 (* (\*       let pivot = t.data.(t.size / 2) in *\) *)
@@ -101,7 +101,7 @@ let grow t min_cap dummy =
     (* set t !j (last t); *)
     (* pop t *)
 
-  let clear t dummy =
+  let clear t _dummy =
     t.data <- Array.make 1 0
 
   let copyTo from copy dummy =

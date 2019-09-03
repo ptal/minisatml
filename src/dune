@@ -1,7 +1,6 @@
 (library
   (name minisatml)
   (public_name minisatml)
-  (libraries unix)
   (flags :standard)
   (ocamlopt_flags (:standard -O3))
   ;(ocamlopt_flags (:standard -p))
