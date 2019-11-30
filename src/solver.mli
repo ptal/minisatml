@@ -38,6 +38,11 @@ val uncheckedEnqueue : Lit.t -> unit
 (* val enqueue_clause : Lit.t -> Clause.t -> Lbool.t *)
 (* val enqueue : Lit.t -> Lbool.t *)
 val propagate : unit -> Clause.t
+
+(** The number of propagated facts. *)
+val numPropagations: unit -> int
+val getTrail: unit -> Lit.t Vec.t
+
 val cancelUntil : int -> unit
 val analyze : Clause.t ref -> Lit.t Vec.t -> int ref -> unit
 val analyzeFinal : Lit.t -> Lit.t Vec.t -> unit

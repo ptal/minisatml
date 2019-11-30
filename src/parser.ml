@@ -54,7 +54,7 @@ let main cin =
     while true do
       match input_char cin with
         | 'c'  -> skip_line cin
-	| '\n' -> ()
+        | '\n' -> ()
         | 'p'  -> read_dims (skip_spaces (input_char cin) cin) cin;
         |  c   ->
           let c = skip_spaces c cin in
@@ -74,4 +74,3 @@ let parse file =
   nbvars  := 0;
   nbcls   := 0;
   List.rev l, nbv, nbc
-

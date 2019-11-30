@@ -306,6 +306,8 @@ let uncheckedEnqueue l =
 (*   let from = dummy_clause in *)
 (*   enqueue_clause p from *)
 
+let numPropagations () = env.propagations
+let getTrail () = env.trail
 
 exception FoundWatch
 (*____________________________________________________________________________
