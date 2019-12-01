@@ -11,6 +11,10 @@ val set_debug : bool -> unit
 val set_trace : bool -> unit
 val set_verbosity : int -> unit
 
+(* Reset the environment to default values.
+   This function should be removed once we passed `env` as an argument. *)
+val resetEnv: unit -> unit
+
 val newVar_var : bool -> bool -> var
 val newVar : unit -> var
 val addClause : Lit.t Vec.t -> bool

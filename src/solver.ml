@@ -133,6 +133,61 @@ let env = {
   remove_satisfied = true;
 }
 
+let resetEnv () =
+begin
+  Vec.clear env.model dummy_lbool;
+  Vec.clear env.conflict dummy_lit;
+  Vec.clear env.clauses dummy_clause;
+  Vec.clear env.learnts dummy_clause;
+  Vec.clear env.activity 0.;
+  Vec.clear env.watches (Vec.init 0 dummy_clause);
+  Vec.clear env.assigns dummy_lbool;
+  Vec.clear env.polarity dummy_polarity;
+  Vec.clear env.decision_var false;
+  Vec.clear env.trail dummy_lit;
+  Vec.clear env.trail_lim 0;
+  Vec.clear env.reason dummy_clause;
+  Vec.clear env.level 0;
+
+  Vec.clear env.seen false;
+  Vec.clear env.analyze_stack dummy_lit;
+  Vec.clear env.analyze_toclear dummy_lit;
+  Vec.clear env.add_tmp dummy_lit;
+
+  Vec.clear env.assumptions dummy_lit;
+  Heap.clear env.order_heap dummy_lit;
+
+  env.var_decay <- 1. /. 0.95;
+  env.clause_decay <- 1;
+  env.random_var_freq <- 0.02;
+  env.restart_first <- 100;
+  env.restart_inc <- 1.5;
+  env.learntsize_factor <- 1. /. 30.;
+  env.learntsize_inc <- 1.1;
+  env.expensive_ccmin <- false;
+  env.polarity_mode <- dummy_polarity;
+  env.verbosity <- 0;
+
+  env.starts <- 0;
+  env.decisions <- 0;
+  env.rnd_decisions <- 0;
+  env.propagations <- 0;
+  env.conflicts <- 0;
+  env.clauses_literals <- 0;
+  env.learnts_literals <- 0;
+  env.max_literals <- 0;
+  env.tot_literals <- 0;
+  env.cla_inc <- 1;
+  env.var_inc <- 1.;
+  env.ok <- true;
+  env.qhead <- 0;
+  env.simpDB_assigns <- -1;
+  env.simpDB_props <- 0;
+  env.random_seed <- 91648253.;
+  env.progress_estimate <- 0.;
+  env.remove_satisfied <- true
+end
+
 let set_debug b =
   debug := b
 
@@ -239,7 +294,6 @@ let pickBranchLit _p _v =
     Printf.eprintf "------------------------\n\n";
   end;
   l
-
 
 let cancelUntil level =
   (* Printf.eprintf " Cancel until %d\n%!" level; *)
